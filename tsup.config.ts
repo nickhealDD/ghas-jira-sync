@@ -2,12 +2,11 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['src/index.ts'],
-  format: ['esm'],
+  format: ['cjs'],
   dts: true,
   sourcemap: true,
   clean: true,
   shims: true,
-  banner: {
-    js: '#!/usr/bin/env node',
-  },
+  // No shebang - GitHub Actions loads this as a module, not a CLI script
+  // CLI usage: node dist/index.cjs or via npm scripts
 });

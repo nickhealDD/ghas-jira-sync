@@ -1,27 +1,49 @@
 #!/usr/bin/env node
-#!/usr/bin/env node
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 
 // src/index.ts
-import { Command } from "commander";
+var import_commander = require("commander");
 
 // src/config.ts
-import { z } from "zod";
-import dotenv from "dotenv";
-dotenv.config();
-var ConfigSchema = z.object({
-  github: z.object({
-    token: z.string().min(1, "GitHub token is required"),
-    owner: z.string().min(1, "GitHub owner is required"),
-    repo: z.string().min(1, "GitHub repo is required")
+var import_zod = require("zod");
+var import_dotenv = __toESM(require("dotenv"), 1);
+import_dotenv.default.config();
+var ConfigSchema = import_zod.z.object({
+  github: import_zod.z.object({
+    token: import_zod.z.string().min(1, "GitHub token is required"),
+    owner: import_zod.z.string().min(1, "GitHub owner is required"),
+    repo: import_zod.z.string().min(1, "GitHub repo is required")
   }),
-  jira: z.object({
-    host: z.string().url("Jira host must be a valid URL"),
-    email: z.string().email("Jira email must be valid"),
-    apiToken: z.string().min(1, "Jira API token is required"),
-    project: z.string().min(1, "Jira project key is required"),
-    epic: z.string().min(1, "Jira epic ID is required")
+  jira: import_zod.z.object({
+    host: import_zod.z.string().url("Jira host must be a valid URL"),
+    email: import_zod.z.string().email("Jira email must be valid"),
+    apiToken: import_zod.z.string().min(1, "Jira API token is required"),
+    project: import_zod.z.string().min(1, "Jira project key is required"),
+    epic: import_zod.z.string().min(1, "Jira epic ID is required")
   }),
-  dryRun: z.boolean().default(false)
+  dryRun: import_zod.z.boolean().default(false)
 });
 function loadConfig(options) {
   const config = {
@@ -43,18 +65,18 @@ function loadConfig(options) {
 }
 
 // src/github/client.ts
-import { Octokit } from "@octokit/rest";
+var import_rest = require("@octokit/rest");
 function createGitHubClient(token) {
-  return new Octokit({
+  return new import_rest.Octokit({
     auth: token,
     userAgent: "ghas-jira-sync/1.0.0"
   });
 }
 
 // src/jira/client.ts
-import { Version3Client } from "jira.js";
+var import_jira = require("jira.js");
 function createJiraClient(config) {
-  return new Version3Client({
+  return new import_jira.Version3Client({
     host: config.host,
     authentication: {
       basic: {
@@ -712,7 +734,7 @@ if (isGitHubAction) {
     process.exit(1);
   });
 } else {
-  const program = new Command();
+  const program = new import_commander.Command();
   program.name("ghas-jira-sync").description("Sync GitHub Advanced Security alerts to Jira tickets").version("1.0.0").requiredOption("--owner <owner>", "GitHub organization or user").requiredOption("--repo <repo>", "GitHub repository name").requiredOption("--epic <epic>", "Jira epic ticket ID (e.g., PROJ-123)").requiredOption("--project <project>", "Jira project key (e.g., PROJ)").option("--dry-run", "Preview without creating tickets", false).action(async (options) => {
     try {
       await runSync({
@@ -736,4 +758,4 @@ if (isGitHubAction) {
   });
   program.parse();
 }
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index.cjs.map
