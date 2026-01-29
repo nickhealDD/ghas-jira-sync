@@ -1,0 +1,42 @@
+name: 'GHAS to Jira Sync'
+description: 'Sync GitHub Advanced Security alerts to Jira tickets under a configurable epic'
+author: 'Nick Heal'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  owner:
+    description: 'GitHub organization or user (auto-detected if not provided)'
+    required: false
+  repo:
+    description: 'GitHub repository name (auto-detected if not provided)'
+    required: false
+  jira-project:
+    description: 'Jira project key (e.g., PROJ)'
+    required: true
+  jira-epic:
+    description: 'Jira epic ticket ID (e.g., PROJ-123)'
+    required: true
+  dry-run:
+    description: 'Preview without creating tickets'
+    required: false
+    default: 'false'
+  github-token:
+    description: 'GitHub token with security events scope'
+    required: false
+    default: ${{ github.token }}
+  jira-host:
+    description: 'Jira instance URL (e.g., https://company.atlassian.net)'
+    required: true
+  jira-email:
+    description: 'Jira account email'
+    required: true
+  jira-api-token:
+    description: 'Jira API token'
+    required: true
+
+runs:
+  using: 'node22'
+  main: 'dist/index.js'

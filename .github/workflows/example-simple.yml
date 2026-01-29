@@ -1,0 +1,27 @@
+# Example: Minimal configuration
+# This workflow syncs GHAS alerts to Jira daily
+# Owner and repo are auto-detected from the repository context
+
+name: Sync Security Alerts (Simple)
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM UTC
+  workflow_dispatch:      # Manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: read  # Required to read GHAS alerts
+      contents: read
+
+    steps:
+      - name: Sync GHAS to Jira
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          jira-project: ${{ vars.JIRA_PROJECT }}
+          jira-epic: ${{ vars.JIRA_EPIC }}
+          jira-host: ${{ secrets.JIRA_HOST }}
+          jira-email: ${{ secrets.JIRA_EMAIL }}
+          jira-api-token: ${{ secrets.JIRA_API_TOKEN }}

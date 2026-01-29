@@ -1,0 +1,49 @@
+{
+  "name": "ghas-jira-sync",
+  "version": "1.0.0",
+  "description": "Sync GitHub Advanced Security alerts to Jira tickets",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "ghas-jira-sync": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest"
+  },
+  "keywords": [
+    "github",
+    "security",
+    "jira",
+    "ghas",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^21.0.2",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "jira.js": "^5.3.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@typescript-eslint/eslint-plugin": "^8.18.2",
+    "@typescript-eslint/parser": "^8.18.2",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

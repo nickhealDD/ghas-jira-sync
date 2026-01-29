@@ -1,0 +1,49 @@
+# Example: Advanced configuration
+# This workflow shows all available options
+
+name: Sync Security Alerts (Advanced)
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Run in dry-run mode (preview only)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: read
+      contents: read
+
+    steps:
+      - name: Sync GHAS to Jira
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          # Optional: Override auto-detected repo
+          owner: myorg
+          repo: myrepo
+
+          # Required: Jira configuration
+          jira-project: PROJ
+          jira-epic: PROJ-123
+
+          # Optional: Dry run mode
+          dry-run: ${{ inputs.dry-run || false }}
+
+          # Optional: Custom GitHub token (defaults to github.token)
+          github-token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+
+          # Required: Jira credentials (stored in repository secrets)
+          jira-host: ${{ secrets.JIRA_HOST }}
+          jira-email: ${{ secrets.JIRA_EMAIL }}
+          jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "Sync failed! Check the logs above."
