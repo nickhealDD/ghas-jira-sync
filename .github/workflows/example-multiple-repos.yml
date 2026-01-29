@@ -1,0 +1,61 @@
+# Example: Sync multiple repositories to the same Jira epic
+# Useful for organizations managing multiple repos
+
+name: Sync Multiple Repos
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # Daily at 10 AM UTC
+  workflow_dispatch:
+
+jobs:
+  sync-repo-1:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: read
+      contents: read
+    steps:
+      - name: Sync Frontend Repo
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          owner: myorg
+          repo: frontend-app
+          jira-project: SECURITY
+          jira-epic: SECURITY-100
+          jira-host: ${{ secrets.JIRA_HOST }}
+          jira-email: ${{ secrets.JIRA_EMAIL }}
+          jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
+
+  sync-repo-2:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: read
+      contents: read
+    steps:
+      - name: Sync Backend Repo
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          owner: myorg
+          repo: backend-api
+          jira-project: SECURITY
+          jira-epic: SECURITY-100
+          jira-host: ${{ secrets.JIRA_HOST }}
+          jira-email: ${{ secrets.JIRA_EMAIL }}
+          jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
+
+  sync-repo-3:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: read
+      contents: read
+    steps:
+      - name: Sync Mobile Repo
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          owner: myorg
+          repo: mobile-app
+          jira-project: SECURITY
+          jira-epic: SECURITY-100
+          jira-host: ${{ secrets.JIRA_HOST }}
+          jira-email: ${{ secrets.JIRA_EMAIL }}
+          jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
