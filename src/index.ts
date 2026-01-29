@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { Command } from 'commander';
 import { loadConfig } from './config.js';
 import { createGitHubClient } from './github/client.js';
