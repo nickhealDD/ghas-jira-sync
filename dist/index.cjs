@@ -50774,6 +50774,16 @@ if (isGitHubAction) {
   const epic = getInput("jira-epic");
   const project = getInput("jira-project");
   const dryRun = getInput("dry-run") === "true";
+  console.log("DEBUG: GitHub Actions inputs:");
+  console.log("  owner:", owner);
+  console.log("  repo:", repo);
+  console.log("  epic:", epic);
+  console.log("  project:", project);
+  console.log("  dryRun:", dryRun);
+  console.log("  github-token:", getInput("github-token") ? "[SET]" : "[NOT SET]");
+  console.log("  jira-host:", getInput("jira-host") ? "[SET]" : "[NOT SET]");
+  console.log("  jira-email:", getInput("jira-email") ? "[SET]" : "[NOT SET]");
+  console.log("  jira-api-token:", getInput("jira-api-token") ? "[SET]" : "[NOT SET]");
   if (getInput("jira-host")) {
     process.env.JIRA_HOST = getInput("jira-host");
   }
