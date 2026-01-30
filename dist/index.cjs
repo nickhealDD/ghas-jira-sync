@@ -50628,12 +50628,12 @@ function mapSeverityToPriority(severity) {
   return priorityMap[severity] || "Medium";
 }
 function createAlertLabel(alertUrl) {
-  const match = alertUrl.match(/\/(dependabot|code-scanning|secret-scanning)\/(\d+)/);
+  const match = alertUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/security\/(dependabot|code-scanning|secret-scanning)\/(\d+)/);
   if (match) {
-    const [, type, id] = match;
-    return `ghas-${type}-${id}`;
+    const [, owner, repo, type, id] = match;
+    return `ghas-${owner}-${repo}-${type}-${id}`;
   }
-  const hash2 = alertUrl.split("/").slice(-2).join("-").replace(/[^a-zA-Z0-9-]/g, "");
+  const hash2 = alertUrl.split("/").slice(-5).join("-").replace(/[^a-zA-Z0-9-]/g, "");
   return `ghas-alert-${hash2}`;
 }
 

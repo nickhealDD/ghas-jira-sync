@@ -428,12 +428,14 @@ function mapSeverityToPriority(severity: AlertSeverity): string {
 function createAlertLabel(alertUrl: string): string {
   // Extract a unique identifier from the alert URL and create a valid Jira label
   // Labels can't contain spaces or special chars except hyphens and underscores
-  const match = alertUrl.match(/\/(dependabot|code-scanning|secret-scanning)\/(\d+)/);
+  // Format: https://github.com/owner/repo/security/(dependabot|code-scanning|secret-scanning)/123
+  const match = alertUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/security\/(dependabot|code-scanning|secret-scanning)\/(\d+)/);
   if (match) {
-    const [, type, id] = match;
-    return `ghas-${type}-${id}`;
+    const [, owner, repo, type, id] = match;
+    // Include owner and repo to ensure uniqueness across multiple repositories
+    return `ghas-${owner}-${repo}-${type}-${id}`;
   }
   // Fallback: create a hash-like identifier from the URL
-  const hash = alertUrl.split('/').slice(-2).join('-').replace(/[^a-zA-Z0-9-]/g, '');
+  const hash = alertUrl.split('/').slice(-5).join('-').replace(/[^a-zA-Z0-9-]/g, '');
   return `ghas-alert-${hash}`;
 }

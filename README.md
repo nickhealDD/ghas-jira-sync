@@ -171,6 +171,7 @@ If fine-grained tokens aren't available, use a classic PAT with these scopes:
 - 🔒 **Comprehensive Coverage**: Syncs Code Scanning, Dependabot, and Secret Scanning alerts
 - 🎯 **Smart Deduplication**: Prevents duplicate tickets using unique alert labels
 - 📊 **Epic Organization**: Groups all security tickets under a specified epic
+- 🏢 **Multi-Repository Support**: Sync multiple repositories to a single epic without conflicts
 - 🎨 **Severity Mapping**: Automatically maps alert severity to Jira priorities
 - ⚡ **Zero Config**: Auto-detects repository context, just add the workflow
 - 🧪 **Dry Run Mode**: Preview changes before creating tickets
@@ -350,9 +351,9 @@ jobs:
           jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
 ```
 
-### Sync Multiple Repos
+### Sync Multiple Repos to One Epic
 
-Sync alerts from multiple repositories to the same epic:
+You can sync security alerts from multiple repositories into a **single Jira epic**. The deduplication strategy ensures each alert creates only one ticket, even when syncing multiple repos:
 
 ```yaml
 jobs:
@@ -512,13 +513,28 @@ jobs:
 
 ### Deduplication Strategy
 
-The tool stores the GitHub alert URL in the Jira ticket description and uses JQL to search for existing tickets:
+The tool uses a **label-based deduplication** system to ensure each alert creates only one ticket:
 
-```jql
-project = "PROJ" AND description ~ "https://github.com/org/repo/security/..."
-```
+1. **Unique Label Generation**: Each alert gets a unique label based on its URL:
+   - `https://github.com/org/repo1/security/dependabot/123` → `ghas-org-repo1-dependabot-123`
+   - `https://github.com/org/repo2/security/dependabot/456` → `ghas-org-repo2-dependabot-456`
 
-This ensures each alert only creates one ticket, even across multiple runs.
+2. **Search Strategy**: Before creating a ticket, searches using JQL:
+   ```jql
+   project = "PROJ" AND labels = "ghas-org-repo1-dependabot-123"
+   ```
+
+3. **Fallback**: If label search fails, falls back to URL-based text search in descriptions
+
+**Multi-Repository Support**: Labels include the owner and repository name, so:
+- ✅ Same epic can track alerts from multiple repositories without conflicts
+- ✅ Alert #123 from `repo1` and alert #123 from `repo2` are treated as distinct alerts
+- ✅ Each repository's alerts remain independently trackable
+
+This ensures each alert only creates one ticket, even across:
+- Multiple sync runs
+- Multiple repositories syncing to the same epic
+- Different alert types (Dependabot, Code Scanning, Secret Scanning)
 
 ### Severity Mapping
 
