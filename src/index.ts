@@ -66,28 +66,6 @@ if (isGitHubAction) {
   const project = getInput('jira-project');
   const dryRun = getInput('dry-run') === 'true';
 
-  // Debug: Log what we're receiving
-  console.log('DEBUG: GitHub Actions inputs:');
-  console.log('  owner:', owner);
-  console.log('  repo:', repo);
-  console.log('  epic:', epic);
-  console.log('  project:', project);
-  console.log('  dryRun:', dryRun);
-  console.log('  github-token:', getInput('github-token') ? '[SET]' : '[NOT SET]');
-  console.log('  jira-host:', getInput('jira-host') ? '[SET]' : '[NOT SET]');
-  console.log('  jira-email:', getInput('jira-email') ? '[SET]' : '[NOT SET]');
-  console.log('  jira-api-token:', getInput('jira-api-token') ? '[SET]' : '[NOT SET]');
-
-  // Debug: Log all INPUT_* environment variables
-  console.log('\nDEBUG: All INPUT_* environment variables:');
-  Object.keys(process.env)
-    .filter(key => key.startsWith('INPUT_'))
-    .forEach(key => {
-      const value = process.env[key];
-      const displayValue = value && value.length > 0 ? '[SET]' : '[EMPTY]';
-      console.log(`  ${key}: ${displayValue}`);
-    });
-
   // Set Jira env vars if provided via inputs
   if (getInput('jira-host')) {
     process.env.JIRA_HOST = getInput('jira-host');

@@ -18,11 +18,21 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     permissions:
-      security-events: read
       contents: read
     steps:
-      - uses: nickhealDD/ghas-jira-sync@v1
+      # Generate short-lived token from GitHub App (recommended)
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: tibdex/github-app-token@v2
         with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      # Sync GHAS alerts to Jira
+      - name: Sync GHAS to Jira
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          github-token: ${{ steps.generate-token.outputs.token }}
           jira-project: ${{ vars.JIRA_PROJECT }}
           jira-epic: ${{ vars.JIRA_EPIC }}
           jira-host: ${{ secrets.JIRA_HOST }}
@@ -30,7 +40,129 @@ jobs:
           jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
 ```
 
-**📖 [Complete 5-Minute Setup Guide →](SETUP.md)**
+> **⚠️ Important:** The default `GITHUB_TOKEN` cannot access Dependabot alerts. See [Authentication Setup](#authentication-setup) below.
+
+## Authentication Setup
+
+The action requires a GitHub token with access to security alerts. The default `GITHUB_TOKEN` has **limited access** and cannot read Dependabot alerts.
+
+### Understanding GitHub Token Permissions
+
+| Alert Type | `GITHUB_TOKEN` with `security-events: read` | Personal Access Token | GitHub App |
+|------------|---------------------------------------------|----------------------|------------|
+| Code Scanning | ✅ Yes | ✅ Yes | ✅ Yes |
+| Secret Scanning | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Dependabot** | ❌ **No** | ✅ Yes | ✅ Yes |
+
+> **Why?** GitHub restricts `GITHUB_TOKEN` access to Dependabot alerts for security reasons. You must use either a Personal Access Token (PAT) or GitHub App.
+
+### Option 1: GitHub App (Recommended)
+
+GitHub Apps generate **short-lived tokens** (1-hour expiration) and are the most secure option.
+
+#### Step 1: Create a GitHub App
+
+1. Go to your organization/user **Settings** → **Developer settings** → **GitHub Apps** → **New GitHub App**
+2. Configure the app:
+   - **GitHub App name**: `GHAS Jira Sync`
+   - **Homepage URL**: Your repository URL
+   - **Webhook**: Uncheck "Active"
+   - **Repository permissions**:
+     - Dependabot alerts: `Read-only`
+     - Code scanning alerts: `Read-only`
+     - Secret scanning alerts: `Read-only`
+     - Contents: `Read-only`
+   - **Where can this GitHub App be installed?**: Only on this account
+3. Click **Create GitHub App**
+
+#### Step 2: Generate Private Key
+
+1. In your app settings, scroll to **Private keys**
+2. Click **Generate a private key**
+3. Save the downloaded `.pem` file
+
+#### Step 3: Install the App
+
+1. Go to **Install App** in the left sidebar
+2. Click **Install** next to your organization/account
+3. Select **Only select repositories** → Choose your repository
+4. Click **Install**
+
+#### Step 4: Add Secrets to Your Repository
+
+1. Go to your repository **Settings** → **Secrets and variables** → **Actions**
+2. Add these secrets:
+   - **`APP_ID`**: The App ID (found at the top of your GitHub App settings)
+   - **`APP_PRIVATE_KEY`**: The entire contents of the `.pem` file (including BEGIN/END lines)
+
+#### Step 5: Use in Workflow
+
+```yaml
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Sync GHAS to Jira
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          github-token: ${{ steps.generate-token.outputs.token }}
+          # ... other inputs
+```
+
+### Option 2: Personal Access Token (Alternative)
+
+If you can't use a GitHub App, use a fine-grained PAT with a short expiration.
+
+#### Create a Fine-Grained PAT
+
+1. Go to **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens**
+2. Click **Generate new token**
+3. Configure:
+   - **Token name**: `GHAS Jira Sync`
+   - **Expiration**: 90 days (or your organization's maximum)
+   - **Repository access**: Only select repositories → Choose your repository
+   - **Repository permissions**:
+     - Dependabot alerts: `Read-only`
+     - Code scanning alerts: `Read-only`
+     - Secret scanning alerts: `Read-only`
+     - Contents: `Read-only`
+4. Click **Generate token** and copy it
+
+#### Add to Repository Secrets
+
+1. Go to your repository **Settings** → **Secrets and variables** → **Actions**
+2. Add secret:
+   - **Name**: `GH_SECURITY_TOKEN`
+   - **Value**: Your PAT
+
+#### Use in Workflow
+
+```yaml
+- name: Sync GHAS to Jira
+  uses: nickhealDD/ghas-jira-sync@v1
+  with:
+    github-token: ${{ secrets.GH_SECURITY_TOKEN }}
+    # ... other inputs
+```
+
+> **⚠️ Remember:** You'll need to rotate this token before it expires. GitHub will send reminder emails.
+
+### Option 3: Classic PAT (Not Recommended)
+
+If fine-grained tokens aren't available, use a classic PAT with these scopes:
+- ✅ `repo` (Full control of private repositories)
+- ✅ `security_events` (Read and write security events)
+
+**Note:** Classic PATs have broader access than necessary. Use fine-grained tokens or GitHub Apps instead.
 
 ## Features
 
@@ -53,12 +185,14 @@ jobs:
 ## Prerequisites
 
 **For GitHub Action (recommended):**
+- GitHub App or Personal Access Token with security alert permissions (see [Authentication Setup](#authentication-setup))
 - Jira account with API token
 - Jira project and epic created
 
 **For CLI usage:**
 - Node.js 22 LTS or higher
 - GitHub Personal Access Token with `repo` and `security_events` scopes
+- Jira account with API token
 
 ## Configuration
 
@@ -71,9 +205,9 @@ jobs:
 | `jira-host` | ✅ Yes | - | Jira instance URL (e.g., `https://company.atlassian.net`) |
 | `jira-email` | ✅ Yes | - | Jira account email |
 | `jira-api-token` | ✅ Yes | - | Jira API token |
+| `github-token` | ⚠️ **Required** | `github.token` | GitHub token with security alert access. **Default token cannot access Dependabot alerts** - use GitHub App or PAT |
 | `owner` | No | Auto-detected | GitHub organization or user |
 | `repo` | No | Auto-detected | Repository name |
-| `github-token` | No | `github.token` | GitHub token with security events scope |
 | `dry-run` | No | `false` | Preview without creating tickets |
 
 ### Repository Configuration
@@ -93,9 +227,9 @@ Go to **Settings** → **Secrets and variables** → **Actions**:
 
 ## Usage Examples
 
-### Basic Daily Sync
+### Basic Daily Sync (GitHub App)
 
-The simplest setup - syncs alerts daily at 9 AM UTC:
+The recommended setup using a GitHub App for secure, short-lived tokens:
 
 ```yaml
 name: Sync Security Alerts
@@ -109,11 +243,19 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     permissions:
-      security-events: read
       contents: read
     steps:
-      - uses: nickhealDD/ghas-jira-sync@v1
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: tibdex/github-app-token@v2
         with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Sync GHAS to Jira
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          github-token: ${{ steps.generate-token.outputs.token }}
           jira-project: ${{ vars.JIRA_PROJECT }}
           jira-epic: ${{ vars.JIRA_EPIC }}
           jira-host: ${{ secrets.JIRA_HOST }}
@@ -121,11 +263,44 @@ jobs:
           jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
 ```
 
-**Alternative:** Hardcode the project and epic if you prefer:
+### Using Personal Access Token
+
+If you're using a PAT instead of a GitHub App:
 
 ```yaml
-- uses: nickhealDD/ghas-jira-sync@v1
+name: Sync Security Alerts
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Sync GHAS to Jira
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          github-token: ${{ secrets.GH_SECURITY_TOKEN }}
+          jira-project: ${{ vars.JIRA_PROJECT }}
+          jira-epic: ${{ vars.JIRA_EPIC }}
+          jira-host: ${{ secrets.JIRA_HOST }}
+          jira-email: ${{ secrets.JIRA_EMAIL }}
+          jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
+```
+
+### Hardcoded Project and Epic
+
+You can hardcode values instead of using repository variables:
+
+```yaml
+- name: Sync GHAS to Jira
+  uses: nickhealDD/ghas-jira-sync@v1
   with:
+    github-token: ${{ steps.generate-token.outputs.token }}
     jira-project: PROJ      # Hardcoded
     jira-epic: PROJ-123     # Hardcoded
     jira-host: ${{ secrets.JIRA_HOST }}
@@ -148,11 +323,29 @@ on:
         type: boolean
         default: false
 
-# In the action step:
-- uses: nickhealDD/ghas-jira-sync@v1
-  with:
-    dry-run: ${{ inputs.dry-run || false }}
-    # ... other inputs
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Sync GHAS to Jira
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          github-token: ${{ steps.generate-token.outputs.token }}
+          dry-run: ${{ inputs.dry-run || false }}
+          jira-project: ${{ vars.JIRA_PROJECT }}
+          jira-epic: ${{ vars.JIRA_EPIC }}
+          jira-host: ${{ secrets.JIRA_HOST }}
+          jira-email: ${{ secrets.JIRA_EMAIL }}
+          jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
 ```
 
 ### Sync Multiple Repos
@@ -164,11 +357,19 @@ jobs:
   sync-frontend:
     runs-on: ubuntu-latest
     permissions:
-      security-events: read
       contents: read
     steps:
-      - uses: nickhealDD/ghas-jira-sync@v1
+      - name: Generate token
+        id: token
+        uses: tibdex/github-app-token@v2
         with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Sync frontend
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          github-token: ${{ steps.token.outputs.token }}
           owner: myorg
           repo: frontend-app
           jira-project: SECURITY
@@ -180,11 +381,19 @@ jobs:
   sync-backend:
     runs-on: ubuntu-latest
     permissions:
-      security-events: read
       contents: read
     steps:
-      - uses: nickhealDD/ghas-jira-sync@v1
+      - name: Generate token
+        id: token
+        uses: tibdex/github-app-token@v2
         with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Sync backend
+        uses: nickhealDD/ghas-jira-sync@v1
+        with:
+          github-token: ${{ steps.token.outputs.token }}
           owner: myorg
           repo: backend-api
           jira-project: SECURITY
@@ -368,22 +577,60 @@ src/
 
 ## Troubleshooting
 
-### "Code scanning not available"
+### 403 Error: "Dependabot alerts not available"
 
-This warning appears if code scanning is not enabled. Enable it in your repository settings under Security > Code scanning.
+**Symptoms:**
+```
+GET /repos/owner/repo/dependabot/alerts - 403
+Dependabot alerts not available or not enabled for this repository
+```
 
-### "Dependabot alerts not available"
+**Cause:** You're using the default `GITHUB_TOKEN`, which cannot access Dependabot alerts.
 
-Enable Dependabot in Settings > Security > Dependabot alerts.
+**Solution:** Use a GitHub App or Personal Access Token instead. See [Authentication Setup](#authentication-setup).
 
-### "Secret scanning not available"
+### 403 Error for Code/Secret Scanning
+
+**Symptoms:**
+```
+GET /repos/owner/repo/code-scanning/alerts - 403
+Code scanning not available or not enabled for this repository
+```
+
+**Possible causes:**
+1. **Feature not enabled**: Enable Code Scanning or Secret Scanning in Settings → Code security and analysis
+2. **Private repository without GHAS**: GitHub Advanced Security is required for private repos
+3. **Token lacks permissions**: Ensure your GitHub App or PAT has the correct permissions
+
+**For GitHub App:** Check that these permissions are set to "Read-only":
+- Code scanning alerts
+- Secret scanning alerts
+- Dependabot alerts
+
+**For PAT:** Ensure you have:
+- Classic PAT: `repo` + `security_events` scopes
+- Fine-grained PAT: Read-only access to security alerts
+
+### "Code scanning not available" (Warning, not error)
+
+This is just a warning if code scanning isn't enabled. Enable it in Settings → Security → Code scanning if you want to sync those alerts.
+
+### "Secret scanning not available" (Warning, not error)
 
 Secret scanning requires GitHub Advanced Security for private repositories. It's automatically available for public repositories.
 
 ### Authentication Errors
 
-- **GitHub**: Ensure your token has `repo` and `security_events` scopes
-- **Jira**: Verify your API token is valid and hasn't expired
+**GitHub token errors:**
+- Ensure your GitHub App has the correct repository permissions
+- For PATs, verify the token has `security_events` scope (Classic) or security alert permissions (Fine-grained)
+- Check that the token hasn't expired
+- Verify the GitHub App is installed on the repository
+
+**Jira authentication errors:**
+- Verify your API token is valid and hasn't expired
+- Ensure the email matches the account that owns the API token
+- Check that the Jira host URL is correct (e.g., `https://company.atlassian.net`)
 
 ### JQL Search Issues
 
