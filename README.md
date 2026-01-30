@@ -189,13 +189,14 @@ If fine-grained tokens aren't available, use a classic PAT with these scopes:
 
 **For GitHub Action (recommended):**
 - GitHub App or Personal Access Token with security alert permissions (see [Authentication Setup](#authentication-setup))
-- Jira account with API token
-- Jira project and epic created
+- Jira account with API token and appropriate project permissions (see [Jira Permissions](#jira-permissions))
+- Jira project and epic already created
+- Jira user account with Browse, Create, and Edit permissions in the target project
 
 **For CLI usage:**
 - Node.js 22 LTS or higher
 - GitHub Personal Access Token with `repo` and `security_events` scopes
-- Jira account with API token
+- Jira account with API token and appropriate project permissions (see [Jira Permissions](#jira-permissions))
 
 ## Configuration
 
@@ -227,6 +228,73 @@ Go to **Settings** → **Secrets and variables** → **Actions**:
 2. **JIRA_EPIC** - Your epic ticket ID (e.g., `PROJ-123`)
 
 > **Tip:** You can also hardcode `jira-project` and `jira-epic` in your workflow if you prefer. Variables are better for reusing across multiple workflows or if you want to change them without editing workflow files.
+
+### Jira Permissions
+
+The Jira user account (associated with the API token) needs specific permissions to create and manage tickets.
+
+#### Required Jira API Token
+
+1. **Create an API token**: Go to [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+2. Click **Create API token**
+3. Give it a name (e.g., "GHAS Jira Sync")
+4. Copy the token and save it as `JIRA_API_TOKEN` secret in GitHub
+
+> **Note:** Jira API tokens inherit the permissions of the user account that created them. The token itself doesn't have separate scopes.
+
+#### Required Project Permissions
+
+The Jira user account must have these permissions in the target project:
+
+| Permission | Required For | How to Check |
+|------------|--------------|--------------|
+| **Browse Projects** | Viewing and searching existing tickets | Project Settings → Permissions → Browse Projects |
+| **Create Issues** | Creating new security alert tickets | Project Settings → Permissions → Create Issues |
+| **Edit Issues** | Linking tickets to the epic | Project Settings → Permissions → Edit Issues |
+| **Add Comments** | (Future feature) Adding updates to tickets | Project Settings → Permissions → Add Comments |
+
+#### Required Issue Type Permissions
+
+The tool creates issues with type **Task**. Ensure:
+
+1. The **Task** issue type exists in your project
+2. The user can create Task issues
+3. Tasks can have a parent (to link to the epic)
+
+#### Epic Requirements
+
+1. The epic must already exist (e.g., `PROJ-123`)
+2. The epic must be in the same project as the tickets being created
+3. The user must have permission to link issues to the epic
+
+#### Verification Checklist
+
+Before running the action, verify:
+
+- [ ] User can manually create a Task in the Jira project via the UI
+- [ ] User can manually link a Task to the epic via the UI
+- [ ] User can manually add labels to tickets via the UI
+- [ ] User can manually set priority on tickets via the UI
+
+If you can do these actions manually in Jira, the API token will work with this tool.
+
+#### Permission Troubleshooting
+
+**Error: "Field 'parent' cannot be set..."**
+- Cause: Task issue type doesn't support parent linking
+- Solution: Enable sub-tasks/parent linking for Task issues in your project settings
+
+**Error: "Field 'priority' cannot be set..."**
+- Cause: Priority field is not available for Task issues
+- Solution: Add priority field to the Task issue type screen
+
+**Error: "User does not have permission to create issues..."**
+- Cause: User lacks Create Issues permission
+- Solution: Contact your Jira admin to grant Create Issues permission
+
+**Error: "User does not have permission to link issues..."**
+- Cause: User lacks Edit Issues permission
+- Solution: Contact your Jira admin to grant Edit Issues permission
 
 ## Usage Examples
 
@@ -649,6 +717,12 @@ Secret scanning requires GitHub Advanced Security for private repositories. It's
 - Verify your API token is valid and hasn't expired
 - Ensure the email matches the account that owns the API token
 - Check that the Jira host URL is correct (e.g., `https://company.atlassian.net`)
+
+**Jira permission errors:**
+- Ensure the user account has Browse Projects, Create Issues, and Edit Issues permissions
+- Verify the Task issue type exists and supports parent linking
+- Check that the epic exists and is in the same project
+- See [Jira Permissions](#jira-permissions) for detailed permission requirements
 
 ### JQL Search Issues
 
