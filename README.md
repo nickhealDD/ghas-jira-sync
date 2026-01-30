@@ -23,10 +23,10 @@ jobs:
       # Generate short-lived token from GitHub App (recommended)
       - name: Generate GitHub App token
         id: generate-token
-        uses: tibdex/github-app-token@v2
+        uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       # Sync GHAS alerts to Jira
       - name: Sync GHAS to Jira
@@ -106,10 +106,10 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: generate-token
-        uses: tibdex/github-app-token@v2
+        uses: actions/create-github-app-token@v1  # Official GitHub action
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Sync GHAS to Jira
         uses: nickhealDD/ghas-jira-sync@v1
@@ -117,6 +117,8 @@ jobs:
           github-token: ${{ steps.generate-token.outputs.token }}
           # ... other inputs
 ```
+
+> **Why `actions/create-github-app-token`?** This is GitHub's **official action** for GitHub App authentication, maintained by GitHub themselves. It's more trustworthy and better maintained than third-party alternatives.
 
 ### Option 2: Personal Access Token (Alternative)
 
@@ -247,10 +249,10 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: generate-token
-        uses: tibdex/github-app-token@v2
+        uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Sync GHAS to Jira
         uses: nickhealDD/ghas-jira-sync@v1
@@ -331,10 +333,10 @@ jobs:
     steps:
       - name: Generate GitHub App token
         id: generate-token
-        uses: tibdex/github-app-token@v2
+        uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Sync GHAS to Jira
         uses: nickhealDD/ghas-jira-sync@v1
@@ -361,10 +363,10 @@ jobs:
     steps:
       - name: Generate token
         id: token
-        uses: tibdex/github-app-token@v2
+        uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Sync frontend
         uses: nickhealDD/ghas-jira-sync@v1
@@ -385,10 +387,10 @@ jobs:
     steps:
       - name: Generate token
         id: token
-        uses: tibdex/github-app-token@v2
+        uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Sync backend
         uses: nickhealDD/ghas-jira-sync@v1
