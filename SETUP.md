@@ -6,9 +6,27 @@ Get your repository syncing GHAS alerts to Jira in 5 minutes.
 
 - GitHub repository with GHAS enabled (Dependabot, Code Scanning, or Secret Scanning)
 - Jira project and epic for security tickets
+- GitHub Personal Access Token with security alert permissions
 - 5 minutes
 
-## Step 1: Get Your Jira API Token (2 minutes)
+## Step 1: Create GitHub Personal Access Token (2 minutes)
+
+1. Go to GitHub **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens**
+2. Click **"Generate new token"**
+3. Configure:
+   - **Token name**: `GHAS Jira Sync`
+   - **Expiration**: 90 days (or your org's maximum)
+   - **Repository access**: Only select repositories → Choose your repository
+   - **Repository permissions**:
+     - Dependabot alerts: `Read-only`
+     - Code scanning alerts: `Read-only` (if using code scanning)
+     - Secret scanning alerts: `Read-only` (if using secret scanning)
+4. Click **"Generate token"** and copy it
+5. Save it somewhere safe - you'll need it in step 3
+
+> **Why not use the default `GITHUB_TOKEN`?** The default token can't access Dependabot alerts. You need a PAT or GitHub App.
+
+## Step 2: Get Your Jira API Token (1 minute)
 
 1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
 2. Click **"Create API token"**
@@ -16,7 +34,7 @@ Get your repository syncing GHAS alerts to Jira in 5 minutes.
 4. Click **"Create"** and copy the token
 5. Save it somewhere safe - you'll need it in step 3
 
-## Step 2: Create the Workflow File (1 minute)
+## Step 3: Create the Workflow File (1 minute)
 
 In your repository, create a new file: `.github/workflows/ghas-jira-sync.yml`
 
@@ -33,14 +51,11 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    permissions:
-      security-events: read
-      contents: read
-
     steps:
       - name: Sync GHAS to Jira
         uses: nickheal/ghas-jira-sync@v1
         with:
+          github-token: ${{ secrets.GH_SECURITY_TOKEN }}
           jira-project: ${{ vars.JIRA_PROJECT }}
           jira-epic: ${{ vars.JIRA_EPIC }}
           jira-host: ${{ secrets.JIRA_HOST }}
@@ -50,7 +65,7 @@ jobs:
 
 > **Note:** You can also hardcode `jira-project` and `jira-epic` directly in the workflow if you prefer (e.g., `jira-project: PROJ`). Using variables makes it easier to reuse across multiple workflows.
 
-## Step 3: Add Repository Secrets & Variables (2 minutes)
+## Step 4: Add Repository Secrets & Variables (2 minutes)
 
 1. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
 
@@ -58,11 +73,12 @@ jobs:
 
 Click the **"Secrets"** tab, then **"New repository secret"** and add these:
 
-| Secret Name      | Value             | Example                         |
-| ---------------- | ----------------- | ------------------------------- |
-| `JIRA_HOST`      | Your Jira URL     | `https://company.atlassian.net` |
-| `JIRA_EMAIL`     | Your Jira email   | `you@company.com`               |
-| `JIRA_API_TOKEN` | Token from Step 1 | `ATATT3xFf...`                  |
+| Secret Name          | Value                 | Example                         |
+| -------------------- | --------------------- | ------------------------------- |
+| `GH_SECURITY_TOKEN`  | Token from Step 1     | `github_pat_11A...`             |
+| `JIRA_HOST`          | Your Jira URL         | `https://company.atlassian.net` |
+| `JIRA_EMAIL`         | Your Jira email       | `you@company.com`               |
+| `JIRA_API_TOKEN`     | Token from Step 2     | `ATATT3xFf...`                  |
 
 ### Add Variables (non-sensitive config)
 
@@ -75,7 +91,7 @@ Click the **"Variables"** tab, then **"New repository variable"** and add these:
 
 > **Why separate secrets and variables?** Secrets are encrypted and hidden (for credentials). Variables are visible and easier to edit (for configuration like project keys).
 
-## Step 4: Test It! (30 seconds)
+## Step 5: Test It! (30 seconds)
 
 1. Go to **Actions** tab in your repo
 2. Click **"Sync Security Alerts to Jira"** workflow
@@ -86,6 +102,23 @@ Click the **"Variables"** tab, then **"New repository variable"** and add these:
 ## Done! 🎉
 
 Your repository will now automatically sync GHAS alerts to Jira daily at 9 AM UTC. You can manually trigger it anytime from the Actions tab.
+
+> **💡 Token expires in 90 days**: Remember to renew your GitHub PAT before it expires. GitHub will send you reminder emails.
+
+---
+
+## Alternative: GitHub App (More Secure)
+
+If you want more security with short-lived tokens (1-hour expiration), use a GitHub App instead of a PAT:
+
+1. Create a GitHub App with Dependabot/Code scanning/Secret scanning permissions
+2. Generate a private key
+3. Use the `actions/create-github-app-token@v1` action to generate tokens
+4. See the [main README](README.md#option-1-github-app-recommended) for detailed setup
+
+**Trade-offs:**
+- **PAT** (what we used): Simple setup, 90-day tokens, needs manual renewal
+- **GitHub App**: More setup, 1-hour tokens (auto-renewed), better security
 
 ---
 
