@@ -50765,7 +50765,7 @@ async function runSync(options) {
 }
 if (isGitHubAction) {
   const getInput = (name) => {
-    return process.env[`INPUT_${name.toUpperCase().replace(/-/g, "_")}`] || "";
+    return process.env[`INPUT_${name.toUpperCase()}`] || "";
   };
   const repository = process.env.GITHUB_REPOSITORY || "";
   const [contextOwner, contextRepo] = repository.split("/");

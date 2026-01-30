@@ -53,7 +53,7 @@ async function runSync(options: {
 if (isGitHubAction) {
   // GitHub Actions mode - read from inputs
   const getInput = (name: string): string => {
-    return process.env[`INPUT_${name.toUpperCase().replace(/-/g, '_')}`] || '';
+    return process.env[`INPUT_${name.toUpperCase()}`] || '';
   };
 
   // Auto-detect owner/repo from GitHub context
